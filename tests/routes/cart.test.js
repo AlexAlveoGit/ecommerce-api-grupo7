@@ -7,10 +7,6 @@ const Cart = require("../../models/cart");
 const Product = require("../../models/product");
 const Category = require("../../models/category");
 
-const CartService = require("../../services/cartService");
-
-jest.mock("../../services/cartService");
-
 const app = express();
 app.use(bodyParser.json());
 app.use("/api/carts", cartRouter);
@@ -30,16 +26,11 @@ describe("Cart Routes", () => {
     await Category.destroy({ where: {} });
   });
 
-  describe("POST /api/carts/:userId", () => {
+  describe("test POST /api/carts/:userId", () => {
     it("should return 201 ok", async () => {
       // Arrange
       const userId = "new-user";
-      CartService.createCart.mockResolvedValue({
-        id: 1,
-        userId: userId,
-        updatedAt: "2024-12-12",
-        createdAt: "2024-12-12",
-      });
+      Cart.create({ userId });
 
       // Act
       const response = await request(app).post(`/api/carts/${userId}`).send();
@@ -47,16 +38,18 @@ describe("Cart Routes", () => {
       // Assert
       expect(response.status).toBe(201);
       expect(response.json).not.toBeNull();
-      expect(response.body.id).toBe(1);
+      expect(response.body.id).toBe(2);
       expect(response.body.userId).toBe("new-user");
-      expect(response.body.updatedAt).toBe("2024-12-12");
-      expect(response.body.createdAt).toBe("2024-12-12");
+      expect(response).toHaveProperty("body.updatedAt");
+      expect(response).toHaveProperty("body.createdAt");
     });
 
     it("should return 400 on create cart for user", async () => {
       // Arrange
       const userId = 1;
-      CartService.createCart.mockRejectedValue(new Error("User not found"));
+
+      jest.spyOn(Cart, "create");
+      Cart.create.mockRejectedValue(new Error("User not found"));
 
       // Act
       const response = await request(app).post(`/api/carts/${userId}`).send();
