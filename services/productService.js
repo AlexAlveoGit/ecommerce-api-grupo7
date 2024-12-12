@@ -12,12 +12,18 @@ class ProductService {
     }
 
     static async createProduct(product) {
-        // Check if category exists
+        if (!product.name) {
+            throw new Error('Product name is required');
+        }
+        if (!product.categoryId) {
+            throw new Error('Category ID is required');
+        }
+    
         const category = await Category.findByPk(product.categoryId);
         if (!category) {
             throw new Error(`Category with id ${product.categoryId} does not exist`);
         }
-        
+    
         return await Product.create(product);
     }
 

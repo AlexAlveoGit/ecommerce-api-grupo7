@@ -24,6 +24,7 @@ describe('Product Routes', () => {
     await Category.destroy({ where: {} });
   });
 
+
   describe('POST /api/products', () => {
     // let category;
 
