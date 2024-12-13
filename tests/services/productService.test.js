@@ -136,11 +136,39 @@ describe('ProductService', () => {
             expect(Product.create).not.toHaveBeenCalled(); // No debe intentar crear el producto
         });
         
+        it('should throw an error if the category does not exist in createProduct', async () => {
+            Category.findByPk.mockResolvedValue(null); // Simula que la categoría no existe
+        
+            const product = { name: 'Test Product', categoryId: 999 };
+        
+            await expect(ProductService.createProduct(product)).rejects.toThrow(
+                'Category with id 999 does not exist'
+            );
+        
+            expect(Category.findByPk).toHaveBeenCalledWith(999); // Verifica la llamada correcta
+            expect(Product.create).not.toHaveBeenCalled(); // No debe intentar crear el producto
+        });
+
+        it('should throw an error if categoryId is missing', async () => {
+            // Producto de prueba sin categoryId
+            const product = { name: 'Test Product' }; // categoryId falta aquí
+        
+            // Verifica que se lanza el error esperado
+            await expect(ProductService.createProduct(product)).rejects.toThrow(
+                'Category ID is required'
+            );
+        
+            // Verifica que no se intentó buscar la categoría ni crear el producto
+            expect(Category.findByPk).not.toHaveBeenCalled();
+            expect(Product.create).not.toHaveBeenCalled();
+        });
 
     });
 
 
-    describe('getProductsByCategories', () => {
+    
+
+    describe('getProductsByCategory', () => {
   
         it('should handle undefined options in getProductsByCategory', async () => {
             Product.findAll.mockResolvedValue([{ id: 1, name: 'Test Product', categoryId: 1 }]);
@@ -176,6 +204,96 @@ describe('ProductService', () => {
         });
         
         
+        it('should return all products for a category when no filters are provided', async () => {
+            Product.findAll.mockResolvedValue([{ id: 1, name: 'Test Product', categoryId: 1 }]);
+        
+            const result = await ProductService.getProductsByCategory(1);
+        
+            expect(result).toEqual([{ id: 1, name: 'Test Product', categoryId: 1 }]); // Valida el resultado
+        });
+        
+
+        it('should correctly parse and add offset to queryOptions in getProductsByCategory', async () => {
+            // Mock de Product.findAll para simular una respuesta vacía
+            Product.findAll.mockResolvedValue([]);
+        
+            // Opciones con offset especificado
+            const options = { offset: '15' }; // Offset como string para validar parseInt
+        
+            const result = await ProductService.getProductsByCategory(1, options);
+        
+            // Verifica que Product.findAll se llamó con el offset correcto
+            expect(Product.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    where: { categoryId: 1 },
+                    offset: 15, // Verifica que el offset fue parseado correctamente
+                })
+            );
+        
+            // Verifica que el resultado sea un array vacío
+            expect(result).toEqual([]);
+        });
+
+    });
+
+
+    describe('getProductsByCategories', () => {
+  
+        it('should throw an error if categories parameter is not provided', async () => {
+            await expect(ProductService.getProductsByCategories()).rejects.toThrow(
+                'Categories parameter is required'
+            );
+        
+            expect(Product.findAll).not.toHaveBeenCalled(); // No debe intentar buscar productos
+        });
+
+        
+        it('should correctly add sort to queryOptions if specified', async () => {
+            Product.findAll.mockResolvedValue([]);
+        
+            const options = { sort: 'name,ASC' };
+            const result = await ProductService.getProductsByCategories('1', options);
+        
+            expect(Product.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    order: [['name', 'ASC']],
+                })
+            );
+        
+            expect(result).toEqual([]); // Valida que el resultado sea un array vacío
+        });
+        
+        it('should correctly add limit to queryOptions if specified', async () => {
+            Product.findAll.mockResolvedValue([]);
+        
+            const options = { limit: '10' }; // Limit como string para validar parseInt
+            const result = await ProductService.getProductsByCategories('1', options);
+        
+            expect(Product.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    limit: 10,
+                })
+            );
+        
+            expect(result).toEqual([]); // Valida que el resultado sea un array vacío
+        });
+        
+        it('should correctly add offset to queryOptions if specified', async () => {
+            Product.findAll.mockResolvedValue([]);
+        
+            const options = { offset: '15' }; // Offset como string para validar parseInt
+            const result = await ProductService.getProductsByCategories('1', options);
+        
+            expect(Product.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    offset: 15,
+                })
+            );
+        
+            expect(result).toEqual([]); // Valida que el resultado sea un array vacío
+        });
+        
+
     });
 
     describe('updateProduct', () => {
@@ -191,6 +309,24 @@ describe('ProductService', () => {
             expect(result).toEqual([0]); // Valida que devuelve [0]
         });
 
+        it('should throw an error if the category does not exist when updating a product', async () => {
+            // Simula que Category.findByPk no encuentra la categoría
+            Category.findByPk.mockResolvedValue(null);
+        
+            // Datos del producto a actualizar, con una categoría inexistente
+            const updatedProduct = { categoryId: 999, name: 'Updated Product' };
+        
+            // Verifica que se lanza el error esperado
+            await expect(ProductService.updateProduct(1, updatedProduct)).rejects.toThrow(
+                'Category with id 999 does not exist'
+            );
+        
+            // Verifica que Category.findByPk se llamó con el ID correcto
+            expect(Category.findByPk).toHaveBeenCalledWith(999);
+        
+            // Verifica que Product.update no fue llamado
+            expect(Product.update).not.toHaveBeenCalled();
+        });
         
     });
 
@@ -231,6 +367,12 @@ describe('ProductService', () => {
             expect(Product.destroy).toHaveBeenCalledWith({ where: { id: 1 } });
         });
         
+        it('should throw an error if Product.destroy fails', async () => {
+            Product.destroy.mockRejectedValue(new Error('Database error'));
+        
+            await expect(ProductService.deleteProduct(1)).rejects.toThrow('Database error');
+            expect(Product.destroy).toHaveBeenCalledWith({ where: { id: 1 } });
+        });
         
 
     });
