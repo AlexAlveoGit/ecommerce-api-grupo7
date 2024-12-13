@@ -30,6 +30,8 @@ router.get('/category/:categoryId', async (req, res) => {
       limit: req.query.limit,
       offset: req.query.offset
     };
+
+
     
     const products = await ProductService.getProductsByCategory(
       req.params.categoryId, 
