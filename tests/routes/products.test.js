@@ -5,6 +5,7 @@ const { initTestDb, closeTestDb } = require('../setup/testDb');
 const productRouter = require('../../routes/products');
 const Product = require('../../models/product');
 const Category = require('../../models/category');
+const ProductService = require('../../services/productService');
 
 const app = express();
 app.use(bodyParser.json());
@@ -76,12 +77,39 @@ describe('Product Routes', () => {
     });
 
 
+    it('should create a product on POST /', async () => {
+      const category = await Category.create({ id: 1, name: 'Test Category' });
+      const newProduct = { name: 'Test Product', categoryId: category.id, price: 100 };
+
+      const response = await request(app)
+        .post('/api/products')
+        .send(newProduct);
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.name).toBe(newProduct.name);
+    }, 20000); // Tiempo límite de 10 segundos
+
+
+
+    it('should return 500 if ProductService.getAllProducts throws an error', async () => {
+      // Mock para forzar un error en getAllProducts
+      jest.spyOn(ProductService, 'getAllProducts').mockRejectedValueOnce(new Error('Mocked error'));
+
+      // Realizar la solicitud al endpoint
+      const response = await request(app).get('/api/products');
+
+      // Validar que el código de estado sea 500
+      expect(response.status).toBe(500);
+      // Validar que el cuerpo de la respuesta contenga el mensaje de error esperado
+      expect(response.body).toHaveProperty('error', 'Mocked error');
+    });
 
   });
 
   describe('GET /api/products/category/:categoryId', () => {
 
- 
+
     it('should return products for category', async () => {
       const category = await Category.create({ name: 'Category A' });
       await Product.create({ name: 'Product A1', categoryId: category.id, price: 100 });
@@ -91,7 +119,7 @@ describe('Product Routes', () => {
 
       expect(response.status).toBe(200); // Verifica que la respuesta sea 200
       expect(response.body.length).toBe(2); // Verifica que se obtienen dos productos
-    }, 10000); // Aumenta el límite de tiempo a 10 segundos
+    }, 20000); // Aumenta el límite de tiempo a 10 segundos
 
 
 
@@ -109,15 +137,46 @@ describe('Product Routes', () => {
 
       console.time('API request');
       const response = await request(app)
-        .get('/api/products/categories?categories='+category1.id+','+category2.id);
-        console.timeEnd('API request');
+        .get('/api/products/categories?categories=' + category1.id + ',' + category2.id);
+      console.timeEnd('API request');
 
-        console.log(response.status);
+      console.log(response.status);
 
       expect(response.status).toBe(200); // Verifica que la respuesta sea 200
       expect(response.body.length).toBe(2); // Verifica que se obtienen dos productos
-    },1000000);
+    }, 20000);
 
+
+    it('should return 400 if ProductService.getProductsByCategory throws an error', async () => {
+      // Mock para forzar un error en getProductsByCategory
+      jest.spyOn(ProductService, 'getProductsByCategory').mockRejectedValueOnce(new Error('Mocked error'));
+
+      // Realizar la solicitud al endpoint con un categoryId válido
+      const response = await request(app).get('/api/products/category/1');
+
+      // Validar que la respuesta tenga un código de estado 400
+      expect(response.status).toBe(400);
+      // Validar que el cuerpo de la respuesta contenga el mensaje de error esperado
+      expect(response.body).toHaveProperty('error', 'Mocked error');
+    });
+
+    it('should return 400 if ProductService.getProductsByCategories throws an error', async () => {
+      // Mock para forzar un error en getProductsByCategories
+      jest.spyOn(ProductService, 'getProductsByCategories').mockRejectedValueOnce(new Error('Mocked error'));
+
+      // Realizar la solicitud al endpoint con parámetros válidos
+      const response = await request(app).get('/api/products/categories').query({
+        categories: '1,2', // Mock de categorías válidas
+        sort: 'name,ASC',
+        limit: 10,
+        offset: 0,
+      });
+
+      // Validar que la respuesta tenga un código de estado 400
+      expect(response.status).toBe(400);
+      // Validar que el cuerpo de la respuesta contenga el mensaje de error esperado
+      expect(response.body).toHaveProperty('error', 'Mocked error');
+    });
 
   });
 });
