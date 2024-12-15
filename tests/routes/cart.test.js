@@ -150,6 +150,7 @@ describe("Cart Routes", () => {
 
       // Assert
       expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Error fetching cart items");
     });
   });
 
@@ -190,7 +191,9 @@ describe("Cart Routes", () => {
     it("should return 400 when fetching error", async () => {
       // Arrange
       jest.spyOn(CartItem, "findByPk");
-      CartItem.findByPk.mockRejectedValue(new Error("Cart item not found"));
+      CartItem.findByPk.mockRejectedValue(
+        new Error("Error updating cart item")
+      );
 
       // Act
       const response = await request(app)
@@ -199,6 +202,7 @@ describe("Cart Routes", () => {
 
       // Assert
       expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Error updating cart item");
     });
   });
 
@@ -238,7 +242,9 @@ describe("Cart Routes", () => {
     it("should return 400 when trying to delete", async () => {
       // Arrange
       jest.spyOn(CartItem, "findByPk");
-      CartItem.findByPk.mockRejectedValue(new Error("Cart item not found"));
+      CartItem.findByPk.mockRejectedValue(
+        new Error("Error deleting cart item")
+      );
 
       // Act
       const response = await request(app).delete(
@@ -247,6 +253,7 @@ describe("Cart Routes", () => {
 
       // Assert
       expect(response.status).toBe(400);
+      expect(response.body.error).toBe("Error deleting cart item");
     });
   });
 });
