@@ -173,10 +173,6 @@ describe("Cart Routes", () => {
       });
     });
 
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
     it("should update cart item", async () => {
       // Act
       const response = await request(app)
@@ -189,20 +185,14 @@ describe("Cart Routes", () => {
     });
 
     it("should return 400 when fetching error", async () => {
-      // Arrange
-      jest.spyOn(CartItem, "findByPk");
-      CartItem.findByPk.mockRejectedValue(
-        new Error("Error updating cart item")
-      );
-
       // Act
       const response = await request(app)
-        .put(`/api/carts/${cart.id}/items/100`)
+        .put(`/api/carts/123/items/123`)
         .send({ quantity: 3 });
 
       // Assert
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Error updating cart item");
+      expect(response.body.error).toBe("Item not found");
     });
   });
 
@@ -225,10 +215,6 @@ describe("Cart Routes", () => {
       });
     });
 
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
     it("should delete cart item", async () => {
       // Act
       const response = await request(app).delete(
@@ -240,20 +226,12 @@ describe("Cart Routes", () => {
     });
 
     it("should return 400 when trying to delete", async () => {
-      // Arrange
-      jest.spyOn(CartItem, "findByPk");
-      CartItem.findByPk.mockRejectedValue(
-        new Error("Error deleting cart item")
-      );
-
       // Act
-      const response = await request(app).delete(
-        `/api/carts/${cart.id}/items/100`
-      );
+      const response = await request(app).delete(`/api/carts/123/items/100`);
 
       // Assert
       expect(response.status).toBe(400);
-      expect(response.body.error).toBe("Error deleting cart item");
+      expect(response.body.error).toBe("Item not found");
     });
   });
 });
