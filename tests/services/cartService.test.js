@@ -33,12 +33,34 @@ describe('CartService', () => {
 
   describe('addItemToCart', () => {
     const mockProduct = { id: 1, inventory: 10, price: 100 };
-    const mockCartItem = { cartId: 1, productId: 1, quantity: 2 };
+    const mockCartItem = { cartId: 1, productId: 1, quantity: 2, save: jest.fn() };
 
-    it('should add new item to cart when product exists and has sufficient inventory', async () => {
+    it('should add item to cart when inventory is available', async () => {
+      // Arrange
+      jest.spyOn(Product, 'findByPk').mockResolvedValue(mockProduct);
+      jest.spyOn(CartItem, 'findOne').mockResolvedValue(mockCartItem);
 
+      // Act
+      const result = await CartService.addItemToCart(1, 1, 3);
+
+      // Assert
+      expect(result).toEqual(mockCartItem);
     });
 
+    it('should return error for inventory higher than new quantity', async () => {
+      // Arrange
+      jest.spyOn(Product, 'findByPk').mockResolvedValue(mockProduct);
+      jest.spyOn(CartItem, 'findOne').mockResolvedValue({ cartId: 1, productId: 1, quantity: 200, save: jest.fn() });
+
+      // Assert
+      expect(async () => await CartService.addItemToCart(1, 1, 2)).rejects.toThrow('Not enough inventory available');
+    });
+
+    it('should return error for quantity higher than inventory', async () => {
+      jest.spyOn(Product, 'findByPk').mockResolvedValue(mockProduct);
+
+      expect(async () => await CartService.addItemToCart(1, 1, 100)).rejects.toThrow('Not enough inventory available');
+    });
   });
 
   describe('getCartItems', () => {
