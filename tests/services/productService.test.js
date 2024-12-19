@@ -102,6 +102,20 @@ describe('ProductService', () => {
             expect(Category.findByPk).toHaveBeenCalledWith(999); // Validar el ID de categoría
         });
 
+
+        it('should throw an error if category does not exist', async () => {
+            // Mock de Category.findByPk
+            Category.findByPk.mockResolvedValue(null);
+    
+            const product = { name: 'New Product', categoryId: 999 };
+    
+            await expect(ProductService.createProduct(product)).rejects.toThrow(
+                'Category with id 999 does not exist'
+            );
+    
+            expect(Category.findByPk).toHaveBeenCalledWith(999); // Validar el ID de categoría
+        });
+
         it('should throw an error if Category.findByPk fails', async () => {
             Category.findByPk.mockRejectedValue(new Error('Database error'));
         

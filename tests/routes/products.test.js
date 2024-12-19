@@ -127,8 +127,6 @@ describe('Product Routes', () => {
       const category1 = await Category.create({ name: 'Category 1' });
       const category2 = await Category.create({ name: 'Category 2' });
 
-      console.log("category1.id=" + category1.id);
-      console.log("category2.id=" + category2.id);
 
       console.time('Product creation');
       await Product.create({ name: 'Product 1', categoryId: category1.id, price: 100 });

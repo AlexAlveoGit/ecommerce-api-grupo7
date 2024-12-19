@@ -36,6 +36,12 @@ class CartService {
   }
 
   static async getCartItems(cartId) {
+
+
+    if (!cartId) {
+      throw new Error('Cart ID is required');
+  }
+
     const items = await CartItem.findAll({
       where: { cartId },
       include: Product,
